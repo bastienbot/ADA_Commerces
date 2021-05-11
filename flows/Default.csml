@@ -30,7 +30,7 @@ start:
 // À toi de jouer maintenant, il va falloir remplir les trous !
 // ############################################################
 // Exercice 0 : Efface la ligne ci-dessous pour commencer l'atelier
-
+/*
 
   remember category = false
   remember arrondissement = false

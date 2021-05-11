@@ -1,0 +1,135 @@
+// Ceci est un commentaire, ils commencent tous par //
+// Le CSML ignore les commentaires, ils sont utiles pour les développeurs :3
+
+// Un chatbot commence toujours par l'étape "start" ci-dessous
+start:
+  // On va saluer l'utilisateur avec la commande `say`
+  say "Salut!"
+  say Typing(3000)
+  say "Je suis Shopibot, le bot qui trouve les commerces de proximité dans Paris! 🤙"
+  // On peut poser une question à l'utilisateur et donner des choix de boutons
+  say Question("Tu es prêt.e ?",
+    buttons=[
+      // Vous remarquerez qu'on utilise le mot clé "as", il permet au csml de se souvenir de ce bouton
+      // pour s'en servir plus tard (dans le if)
+      Button("Oui let's gooo! 🔥") as btnOui,
+      Button("Pas tout à fait 😕") as btnNon
+    ])
+  // "hold" indique au chatbot qu'il doit attendre une réponse de l'utilisateur (une phrase ou un click)
+	hold
+  // La réponse de l'utilisateur va arriver dans la variable `event`
+  // Dans le cas présent on va voir ce que contient cette variable en demandant au csml si event "match" le bouton Oui
+  if (event match btnOui) {
+    say "Super allons-y!"
+  } else {
+    say "Pas de soucis, je me tiens à ta disposition!"
+    goto end
+  }
+  
+// ############################################################
+// À toi de jouer maintenant, il va falloir remplir les trous !
+// ############################################################
+// Exercice 0 : Efface la ligne ci-dessous pour commencer l'atelier
+
+
+  remember category = false
+  remember arrondissement = false
+  remember service = false
+
+  say "Je connais tous les commerces parisiens, je peux trouver tout ce que tu recherches."
+  say "J'ai juste besoin de te poser quelques questions 🧐."
+	goto quelleCategorie
+
+quelleCategorie:
+  // 1 - Il manque un mot clé pour poser la question
+	say Question("Quelle catégorie de commerce recherches-tu?",
+	buttons=[
+    Button("Boulangerie"),
+    Button("Restaurant"),
+    Button("Librairie"),
+    Button("Caviste - Brasserie"),
+    Button("Fleuriste"),
+    Button("Boucherie"),
+    Button("Primeur"),
+    Button("Alimentation générale"),
+    Button("Blanchisserie"),
+    Button("Poissonnerie"),
+    Button("Fromagerie"),
+    Button("Cosmétique"),
+    Button("Épicerie fine"),
+    Button("Bricolage")
+  ])
+  // 2 - Indique au chatbot d'attendre la réponse de l'utilisateur ici
+	????
+  // 3 - Le chatbot doit se souvenir de la variable `category`
+	???? category = event
+  goto quelArrondissement
+
+
+// 4 - Il faut nommer l'étape ci-dessous
+????:
+  // 5 - Tu dois ajouter le mot clé manquant pour que ça marche
+  say ????("Dis moi dans quel arrondissement tu te trouves.",
+	  buttons=[Button("Pas d'arrondissement en particulier")
+  ])
+  hold
+  // 7 - Tu dois te souvenir de la saisie de l'utilisateur
+  // en la mettant dans la variable `arrondissement`
+  remember ???? = ????
+  // 8 - Envoie le chatbot à l'étape suivante
+  ???? quelService
+  
+quelService:
+  // 9 - Il manque BEAUCOUP de chose ci-dessous
+  ???? Question("Quel service recherches-tu ?",
+  ????=[
+		Button("Retrait de commandes en magasin"),
+		Button("Livraisons à domicile")
+  ])
+  ????
+  ???? service = ????
+  // 10 - Indique au chatbot qu'il doit se rendre à l'étape results`
+  ???? ????
+
+results:
+	say "Roulement de tambours 🥁"
+	say Typing(3000)
+  do r = arrondissement.match_regex("[0-9]+")
+  if (r) {
+    do arr = r[0] + 75000
+    if (arr <= 75000 || arr > 75020) {
+      do arr = "any"
+    }
+  } else do arr = "any"
+  if (service != "Livraisons à domicile" && service != "Retrait de commandes en magasin")
+    do service = "any"
+  // say "{{arr}}"
+  do res = App("Commerces", category=category, arrondissement=arr, service=service)
+  do cards = []
+  if (res.length() == 0) {
+    say "Je n'ai pas trouvé d'activités, désolé 😔"
+    goto start
+  }
+  do buttons = []
+  foreach (val, index) in res {
+      do buttons.push(Button(val.fields.nom_du_commerce, payload=val.recordid))
+  }
+  do buttons.push(Button("🆕 Lancer une nouvelle recherche 🧐", payload="RESTART"))
+  say QuickReply("Voici les commerces qui correspondent à ta recherche :",
+    buttons = buttons
+  )
+  hold
+  if (event == "RESTART") goto quelleCategorie
+  do res = App("Commerces", id=event)
+  if (!res.recordid) {
+    say "Je ne connais malheureusement pas ce commerce"
+    goto results
+  }
+  say "{{res.fields.nom_du_commerce}} - {{res.fields.type_de_commerce}}"
+  say Typing(2000)
+  say "{{res.fields.description}}"
+  say Typing(4000)
+  say "{{res.fields.mail}} - {{res.fields.telephone}}"
+  say Typing(2000)
+  say Url(res.fields.site_internet, text="Visiter le site")
+  goto end
